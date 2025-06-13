@@ -386,7 +386,7 @@ func (d *DefaultDispatcher) routedDispatch(ctx context.Context, link *transport.
 	outbounds := session.OutboundsFromContext(ctx)
 	ob := outbounds[len(outbounds)-1]
 	if destination.Address.Family().IsDomain() {
-		if ips, err, _ := d.dns.LookupIP(destination.Address.Domain(), dns.IPOption{
+		if ips, _, err, _ := d.dns.LookupIP(destination.Address.Domain(), dns.IPOption{
 			IPv4Enable: true,
 			IPv6Enable: true,
 			FakeEnable: destination.Network == net.Network_UDP,
@@ -394,9 +394,9 @@ func (d *DefaultDispatcher) routedDispatch(ctx context.Context, link *transport.
 			ro := ob.RouteTarget == destination
 			switch {
 			case len(ips) == 1:
-				destination.Address = ips[0]
+				destination.Address = net.IPAddress(ips[0])
 			default:
-				destination.Address = ips[0]
+				destination.Address = net.IPAddress(ips[0])
 			}
 			if ro {
 				ob.RouteTarget = destination
