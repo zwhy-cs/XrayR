@@ -385,19 +385,11 @@ func sniffer(ctx context.Context, cReader *cachedReader, metadataOnly bool, netw
 func (d *DefaultDispatcher) routedDispatch(ctx context.Context, link *transport.Link, destination net.Destination) {
 	outbounds := session.OutboundsFromContext(ctx)
 	ob := outbounds[len(outbounds)-1]
-	if destination.Address.Family().IsDomain() {
-		if ips, _, err := d.dns.LookupIP(destination.Address.Domain(), dns.IPOption{
-			IPv4Enable: true,
-			IPv6Enable: true,
-			FakeEnable: destination.Network == net.Network_UDP,
-		}); err == nil && len(ips) > 0 {
+	if hosts, ok := d.dns.(dns.HostsLookup); ok && destination.Address.Family().IsDomain() {
+		proxied := hosts.LookupHosts(ob.Target.String())
+		if proxied != nil {
 			ro := ob.RouteTarget == destination
-			switch {
-			case len(ips) == 1:
-				destination.Address = net.IPAddress(ips[0])
-			default:
-				destination.Address = net.IPAddress(ips[0])
-			}
+			destination.Address = *proxied
 			if ro {
 				ob.RouteTarget = destination
 			} else {
