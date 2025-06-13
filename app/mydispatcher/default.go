@@ -183,22 +183,29 @@ func (d *DefaultDispatcher) getLink(ctx context.Context) (*transport.Link, *tran
 		}
 
 		p := d.policy.ForLevel(user.Level)
+		errors.LogInfo(ctx, "User: ", user.Email, " Level: ", user.Level, " UserUplink: ", p.Stats.UserUplink, " UserDownlink: ", p.Stats.UserDownlink)
 		if p.Stats.UserUplink {
 			name := "user>>>" + user.Email + ">>>traffic>>>uplink"
 			if c, _ := stats.GetOrRegisterCounter(d.stats, name); c != nil {
+				errors.LogInfo(ctx, "Setting uplink traffic counter for user: ", user.Email)
 				inboundLink.Writer = &SizeStatWriter{
 					Counter: c,
 					Writer:  inboundLink.Writer,
 				}
+			} else {
+				errors.LogWarning(ctx, "Failed to create uplink counter for user: ", user.Email)
 			}
 		}
 		if p.Stats.UserDownlink {
 			name := "user>>>" + user.Email + ">>>traffic>>>downlink"
 			if c, _ := stats.GetOrRegisterCounter(d.stats, name); c != nil {
+				errors.LogInfo(ctx, "Setting downlink traffic counter for user: ", user.Email)
 				outboundLink.Writer = &SizeStatWriter{
 					Counter: c,
 					Writer:  outboundLink.Writer,
 				}
+			} else {
+				errors.LogWarning(ctx, "Failed to create downlink counter for user: ", user.Email)
 			}
 		}
 	}
